@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recipe Finder App</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, Helvetica, sans-serif;
+}
+
+body{
+    background:#f4f4f4;
+}
+
+.container{
+    width:95%;
+    margin:auto;
+    padding:20px;
+}
+
+h1{
+    text-align:center;
+    color:#ff5a1f;
+    margin-bottom:30px;
+}
+
+.search-section{
+    display:flex;
+    justify-content:center;
+    gap:15px;
+    flex-wrap:wrap;
+    margin-bottom:30px;
+}
+
+input, select{
+    padding:12px;
+    width:300px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    font-size:16px;
+}
+
+.recipe-container{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+    gap:25px;
+}
+
+.recipe-card{
+    background:white;
+    border-radius:12px;
+    overflow:hidden;
+    box-shadow:0 4px 12px rgba(0,0,0,0.15);
+    transition:0.3s;
+}
+
+.recipe-card:hover{
+    transform:translateY(-5px);
+}
+
+.recipe-card img{
+    width:100%;
+    height:220px;
+    object-fit:cover;
+}
+
+.recipe-content{
+    padding:15px;
+}
+
+.recipe-content h3{
+    margin-bottom:10px;
+}
+
+.recipe-content p{
+    color:#555;
+    margin-bottom:15px;
+}
+
+button{
+    background:#ff5a1f;
+    color:white;
+    border:none;
+    padding:10px 18px;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#e14a14;
+}
+
+.modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.7);
+    justify-content:center;
+    align-items:center;
+}
+
+.modal-content{
+    background:white;
+    width:90%;
+    max-width:500px;
+    padding:20px;
+    border-radius:10px;
+    position:relative;
+}
+
+.close{
+    position:absolute;
+    top:10px;
+    right:15px;
+    font-size:28px;
+    cursor:pointer;
+    color:red;
+}
+
+.modal h2{
+    margin-bottom:10px;
+    color:#ff5a1f;
+}
+
+.modal ul{
+    margin-top:10px;
+    padding-left:20px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <h1>🍽 Recipe Finder App</h1>
+
+    <div class="search-section">
+        <input type="text" id="searchInput" placeholder="Search recipe...">
+
+        <select id="categoryFilter">
+            <option value="All">All Categories</option>
+            <option value="Chicken">Chicken</option>
+            <option value="Beef">Beef</option>
+            <option value="Seafood">Seafood</option>
+            <option value="Dessert">Dessert</option>
+            <option value="Vegetarian">Vegetarian</option>
+        </select>
+    </div>
+
+    <div class="recipe-container" id="recipeContainer"></div>
+
+</div>
+
+<!-- Modal -->
+<div class="modal" id="recipeModal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2 id="modalTitle"></h2>
+        <p id="modalDescription"></p>
+
+        <h3>Ingredients</h3>
+        <ul id="modalIngredients"></ul>
+    </div>
+</div>
+
+<script>
+
+const recipes = [
+
+{
+name:"Chicken Handi",
+category:"Chicken",
+image:"https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=800",
+description:"Delicious chicken recipe.",
+ingredients:["Chicken","Onion","Tomato","Spices"]
+},
+
+{
+name:"Beef Curry",
+category:"Beef",
+image:"https://images.unsplash.com/photo-1544025162-d76694265947?w=800",
+description:"Rich and flavorful beef curry.",
+ingredients:["Beef","Curry Powder","Garlic","Onion"]
+},
+
+{
+name:"Seafood Pasta",
+category:"Seafood",
+image:"https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=800",
+description:"Healthy seafood pasta.",
+ingredients:["Pasta","Shrimp","Olive Oil","Garlic"]
+},
+
+{
+name:"Chocolate Cake",
+category:"Dessert",
+image:"https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800",
+description:"Soft and delicious chocolate cake.",
+ingredients:["Flour","Chocolate","Sugar","Eggs"]
+},
+
+{
+name:"Veg Burger",
+category:"Vegetarian",
+image:"https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800",
+description:"Crispy homemade veg burger.",
+ingredients:["Bun","Veg Patty","Lettuce","Cheese"]
+},
+
+{
+name:"Paneer Butter Masala",
+category:"Vegetarian",
+image:"https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=800",
+description:"Creamy paneer curry.",
+ingredients:["Paneer","Butter","Tomato","Cream"]
+},
+
+{
+name:"Chicken Biryani",
+category:"Chicken",
+image:"https://images.unsplash.com/photo-1631515243349-e0cb75fb8d3a?w=800",
+description:"Aromatic chicken biryani.",
+ingredients:["Rice","Chicken","Spices","Yogurt"]
+},
+
+{
+name:"Grilled Fish",
+category:"Seafood",
+image:"https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=800",
+description:"Healthy grilled fish.",
+ingredients:["Fish","Lemon","Pepper","Olive Oil"]
+},
+
+{
+name:"Brownie",
+category:"Dessert",
+image:"https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=800",
+description:"Fudgy chocolate brownie.",
+ingredients:["Chocolate","Butter","Flour","Sugar"]
+},
+
+{
+name:"Beef Steak",
+category:"Beef",
+image:"https://images.unsplash.com/photo-1558030006-450675393462?w=800",
+description:"Juicy grilled beef steak.",
+ingredients:["Beef","Salt","Pepper","Butter"]
+}
+
+];
+
+const recipeContainer = document.getElementById("recipeContainer");
+const searchInput = document.getElementById("searchInput");
+const categoryFilter = document.getElementById("categoryFilter");
+
+function displayRecipes(recipeList){
+
+    recipeContainer.innerHTML = "";
+
+    recipeList.forEach(recipe => {
+
+        recipeContainer.innerHTML += `
+        <div class="recipe-card">
+            <img src="${recipe.image}" alt="${recipe.name}">
+            <div class="recipe-content">
+                <h3>${recipe.name}</h3>
+                <p>${recipe.description}</p>
+                <button onclick="showRecipe('${recipe.name}')">
+                    View Recipe
+                </button>
+            </div>
+        </div>
+        `;
+    });
+}
+
+function filterRecipes(){
+
+    const searchText = searchInput.value.toLowerCase();
+    const category = categoryFilter.value;
+
+    const filtered = recipes.filter(recipe => {
+
+        const matchesSearch =
+            recipe.name.toLowerCase().includes(searchText);
+
+        const matchesCategory =
+            category === "All" ||
+            recipe.category === category;
+
+        return matchesSearch && matchesCategory;
+    });
+
+    displayRecipes(filtered);
+}
+
+searchInput.addEventListener("input", filterRecipes);
+categoryFilter.addEventListener("change", filterRecipes);
+
+const modal = document.getElementById("recipeModal");
+const closeBtn = document.querySelector(".close");
+
+function showRecipe(recipeName){
+
+    const recipe = recipes.find(
+        item => item.name === recipeName
+    );
+
+    document.getElementById("modalTitle").textContent =
+        recipe.name;
+
+    document.getElementById("modalDescription").textContent =
+        recipe.description;
+
+    const ingredientList =
+        document.getElementById("modalIngredients");
+
+    ingredientList.innerHTML = "";
+
+    recipe.ingredients.forEach(item => {
+        ingredientList.innerHTML += `<li>${item}</li>`;
+    });
+
+    modal.style.display = "flex";
+}
+
+closeBtn.addEventListener("click", () => {
+    modal.style.display = "none";
+});
+
+window.addEventListener("click", (e)=>{
+    if(e.target === modal){
+        modal.style.display = "none";
+    }
+});
+
+displayRecipes(recipes);
+
+</script>
+
+</body>
+</html>
