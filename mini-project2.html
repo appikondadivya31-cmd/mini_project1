@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Book Wishlist Tracker</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Segoe UI',sans-serif;
+}
+
+body{
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    min-height:100vh;
+    padding:30px;
+}
+
+.container{
+    max-width:1000px;
+    margin:auto;
+}
+
+.title{
+    text-align:center;
+    color:white;
+    margin-bottom:25px;
+    font-size:2.5rem;
+}
+
+.form-container{
+    background:white;
+    padding:20px;
+    border-radius:15px;
+    display:flex;
+    gap:15px;
+    flex-wrap:wrap;
+    box-shadow:0 10px 30px rgba(0,0,0,.2);
+}
+
+.form-container input{
+    flex:1;
+    min-width:220px;
+    padding:12px;
+    border:2px solid #ddd;
+    border-radius:10px;
+    outline:none;
+}
+
+.form-container button{
+    padding:12px 25px;
+    border:none;
+    border-radius:10px;
+    background:#667eea;
+    color:white;
+    cursor:pointer;
+    font-size:16px;
+    transition:.3s;
+}
+
+.form-container button:hover{
+    background:#4f5fd8;
+}
+
+.book-grid{
+    margin-top:30px;
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    gap:20px;
+}
+
+.book-card{
+    background:white;
+    padding:20px;
+    border-radius:15px;
+    box-shadow:0 8px 20px rgba(0,0,0,.15);
+    transition:.3s;
+}
+
+.book-card:hover{
+    transform:translateY(-5px);
+}
+
+.book-title{
+    font-size:22px;
+    font-weight:bold;
+    margin-bottom:8px;
+}
+
+.author{
+    color:#666;
+    margin-bottom:15px;
+}
+
+.rating{
+    margin:10px 0;
+}
+
+.star{
+    font-size:28px;
+    cursor:pointer;
+    color:#ccc;
+    transition:.2s;
+}
+
+.star.active{
+    color:gold;
+}
+
+.status{
+    margin-top:10px;
+    margin-bottom:15px;
+}
+
+.toggle-btn{
+    padding:8px 15px;
+    border:none;
+    border-radius:20px;
+    color:white;
+    cursor:pointer;
+}
+
+.read{
+    background:#27ae60;
+}
+
+.unread{
+    background:#e74c3c;
+}
+
+.delete-btn{
+    width:100%;
+    margin-top:10px;
+    padding:10px;
+    border:none;
+    border-radius:10px;
+    background:#ff4757;
+    color:white;
+    cursor:pointer;
+}
+
+.delete-btn:hover{
+    background:#e84150;
+}
+
+.stats{
+    margin-top:25px;
+    background:white;
+    padding:15px;
+    border-radius:15px;
+    display:flex;
+    justify-content:space-around;
+    flex-wrap:wrap;
+    font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1 class="title">📚 Book Wishlist Tracker</h1>
+
+    <div class="form-container">
+        <input type="text" id="bookTitle" placeholder="Book Title">
+        <input type="text" id="author" placeholder="Author Name">
+        <button onclick="addBook()">Add Book</button>
+    </div>
+
+    <div class="stats">
+        <span>Total Books: <span id="totalBooks">0</span></span>
+        <span>Read: <span id="readBooks">0</span></span>
+        <span>Unread: <span id="unreadBooks">0</span></span>
+    </div>
+
+    <div class="book-grid" id="bookGrid"></div>
+
+</div>
+
+<script>
+
+let books = JSON.parse(localStorage.getItem("books")) || [];
+
+function saveBooks(){
+    localStorage.setItem("books", JSON.stringify(books));
+    updateStats();
+}
+
+function addBook(){
+
+    const title = document.getElementById("bookTitle").value.trim();
+    const author = document.getElementById("author").value.trim();
+
+    if(!title || !author){
+        alert("Please fill all fields");
+        return;
+    }
+
+    books.push({
+        id: Date.now(),
+        title,
+        author,
+        rating:0,
+        read:false
+    });
+
+    document.getElementById("bookTitle").value="";
+    document.getElementById("author").value="";
+
+    saveBooks();
+    displayBooks();
+}
+
+function displayBooks(){
+
+    const grid = document.getElementById("bookGrid");
+
+    grid.innerHTML = "";
+
+    books.forEach(book => {
+
+        const starsHTML = [1,2,3,4,5].map(star =>
+            `<span class="star ${star <= book.rating ? 'active':''}"
+                onclick="updateRating(${book.id},${star})">
+                ★
+            </span>`
+        ).join("");
+
+        grid.innerHTML += `
+        <div class="book-card">
+
+            <div class="book-title">${book.title}</div>
+
+            <div class="author">✍ ${book.author}</div>
+
+            <div class="rating">
+                ${starsHTML}
+            </div>
+
+            <div>
+                Rating: ${book.rating}/5
+            </div>
+
+            <div class="status">
+                <button
+                    class="toggle-btn ${book.read ? 'read':'unread'}"
+                    onclick="toggleRead(${book.id})">
+                    ${book.read ? 'Read ✅' : 'Unread 📖'}
+                </button>
+            </div>
+
+            <button class="delete-btn"
+                onclick="deleteBook(${book.id})">
+                Delete Book
+            </button>
+
+        </div>`;
+    });
+
+    updateStats();
+}
+
+function updateRating(id,rating){
+
+    const book = books.find(b => b.id === id);
+
+    if(book){
+        book.rating = rating;
+
+        // Backend-style update simulation
+        console.log("Rating updated:", {
+            bookId:id,
+            newRating:rating
+        });
+
+        saveBooks();
+        displayBooks();
+    }
+}
+
+function toggleRead(id){
+
+    const book = books.find(b => b.id === id);
+
+    if(book){
+        book.read = !book.read;
+
+        console.log("Read status updated:", {
+            bookId:id,
+            read:book.read
+        });
+
+        saveBooks();
+        displayBooks();
+    }
+}
+
+function deleteBook(id){
+
+    books = books.filter(book => book.id !== id);
+
+    saveBooks();
+    displayBooks();
+}
+
+function updateStats(){
+
+    document.getElementById("totalBooks").textContent =
+        books.length;
+
+    document.getElementById("readBooks").textContent =
+        books.filter(book => book.read).length;
+
+    document.getElementById("unreadBooks").textContent =
+        books.filter(book => !book.read).length;
+}
+
+displayBooks();
+
+</script>
+
+</body>
+</html>
